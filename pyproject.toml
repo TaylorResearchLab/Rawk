@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "rawk"
+
+version = "0.0.5"
+
+description = "Metabolic reaction network local enrichment analysis"
+
+readme = "README.md"
+
+requires-python = "~=3.11"
+
+license = {file = "LICENSE.txt"}
+
+keywords = ["metabolism", "network", "enrichment"]
+
+authors = [
+    {name = "Taylor Lab"}
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha"
+]
+
+dependencies = [
+    "node2vec~=0.5.0",
+    "pandas~=2.2.0",
+    "networkx~=3.1",
+    "matplotlib~=3.8.3",
+    "numpy~=1.26.4",
+    "scipy~=1.12.0",
+    "scikit-learn~=1.4.1",
+    "adjustText~=1.1.1",
+    "seaborn~=0.13.2",
+    "joblib~=1.4.2",
+    "cobra~=0.29.0",
+]
