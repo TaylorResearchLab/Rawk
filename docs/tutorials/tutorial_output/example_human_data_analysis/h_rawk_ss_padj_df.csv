@@ -1,0 +1,100 @@
+,pathway,LJP005_HA1E_24H_G13___HA1E___withaferin-a___10_0_um___24_h_rawk
+0,Alanine and aspartate metabolism,0.28039435018988496
+2,Aminoacyl-tRNA biosynthesis,0.051339805532706305
+3,Aminosugar metabolism,0.5581061003139017
+4,Androgen and estrogen synthesis and metabolism,0.9737732418581838
+5,Arachidonic acid metabolism,0.9737732418581838
+6,Arginine and proline metabolism,0.346754118582576
+7,Beta-Alanine metabolism,0.9887176185861747
+8,Bile acid synthesis,0.06775310371079173
+9,Biotin metabolism,6.409120381503263e-06
+11,Butanoate metabolism,0.9552036634734102
+12,C5-branched dibasic acid metabolism,0.3945561621973338
+13,Cholesterol metabolism,0.30419891968330887
+14,Chondroitin sulfate degradation,5.739074610672125e-16
+15,Chondroitin synthesis,3.008637810101512e-30
+16,Citric acid cycle,0.3945561621973338
+17,CoA catabolism,4.592239299561641e-06
+18,CoA synthesis,3.5952125562876076e-06
+19,Cytochrome metabolism,0.16958048694607952
+20,D-alanine metabolism,0.4102081750307314
+21,Drug metabolism,1.0286592274833325e-14
+22,Eicosanoid metabolism,0.9887176185861747
+23,Exchange/demand reaction,0.005879317870980245
+24,Fatty acid oxidation,0.6442987702597615
+25,Fatty acid synthesis,0.0161999176425518
+26,Folate metabolism,0.005644669334254612
+27,Fructose and mannose metabolism,0.30347680284649914
+28,Galactose metabolism,0.6442987702597615
+29,Glutamate metabolism,0.47410808887514583
+30,Glutathione metabolism,0.6528179597998202
+31,Glycerophospholipid metabolism,0.17967564105818226
+32,"Glycine, serine, alanine, and threonine metabolism",0.07906988013846183
+33,Glycolysis/gluconeogenesis,0.6528179597998202
+34,Glycosphingolipid metabolism,6.329984889502752e-12
+35,Glyoxylate and dicarboxylate metabolism,0.6528179597998202
+36,Heme degradation,0.30419891968330887
+37,Heme synthesis,0.5689006573523875
+38,Heparan sulfate degradation,0.006813020545370259
+39,Histidine metabolism,0.6710006483090147
+40,Hyaluronan metabolism,0.9070332471372693
+41,Inositol phosphate metabolism,0.8119448391149906
+42,Keratan sulfate degradation,0.48440127649880327
+43,Keratan sulfate synthesis,0.6528179597998202
+44,Leukotriene metabolism,0.27565769601976786
+46,Linoleate metabolism,0.0012834771463907648
+47,Lipoate metabolism,7.939012941459879e-05
+48,Lysine metabolism,0.4499175724032431
+49,Methionine and cysteine metabolism,0.8654518102713853
+50,Miscellaneous,0.8981930553721664
+51,N-glycan degradation,0.6528179597998202
+52,N-glycan metabolism,0.4499175724032431
+53,N-glycan synthesis,0.035285101809485735
+54,NAD metabolism,0.005532601692635891
+55,Nucleotide interconversion,0.051339805532706305
+56,Nucleotide metabolism,0.8119448391149906
+57,Nucleotide salvage pathway,0.6687385034632857
+58,Nucleotide sugar metabolism,9.996778938290138e-12
+59,O-glycan metabolism,0.27423032143528187
+60,Oxidative phosphorylation,0.852325953041307
+61,Pentose phosphate pathway,0.07665543114925172
+62,Phenylalanine metabolism,0.30419891968330887
+63,Phosphatidylinositol phosphate metabolism,0.7374389339789009
+64,Propanoate metabolism,0.6232436171723492
+65,Protein assembly,0.6105987816662727
+66,Protein degradation,0.16594105243008478
+67,Protein modification,0.003399750989792237
+68,Purine catabolism,0.9737732418581838
+69,Purine synthesis,0.9070332471372693
+70,Pyrimidine catabolism,0.28487273931327856
+71,Pyrimidine synthesis,0.12630769679756512
+72,Pyruvate metabolism,0.16594105243008478
+73,ROS detoxification,0.12093734838658031
+74,Selenoamino acid metabolism,0.01575853878627047
+75,Sphingolipid metabolism,0.6105987816662727
+76,Squalene and cholesterol synthesis,0.0129625006277143
+77,Starch and sucrose metabolism,0.6105987816662727
+78,Steroid metabolism,0.16840821207696874
+79,"Stilbene, coumarine and lignin synthesis",1.4452033840028585e-05
+80,Taurine and hypotaurine metabolism,0.006813020545370259
+81,Tetrahydrobiopterin metabolism,0.07906988013846183
+82,Thiamine metabolism,0.012585733055863501
+83,"Transport, endoplasmic reticular",0.0025430398931086963
+84,"Transport, extracellular",0.5689006573523875
+85,"Transport, golgi apparatus",0.5581061003139017
+86,"Transport, lysosomal",0.346754118582576
+87,"Transport, mitochondrial",0.051339805532706305
+88,"Transport, nuclear",0.7313021847903309
+89,"Transport, peroxisomal",0.16958048694607952
+90,Triacylglycerol synthesis,0.6528179597998202
+91,Tryptophan metabolism,0.5729110697466332
+92,Tyrosine metabolism,0.6339336714526087
+93,Ubiquinone synthesis,0.5496364596600954
+94,Urea cycle,0.03248362998672202
+95,"Valine, leucine, and isoleucine metabolism",0.2286094352561568
+96,Vitamin A metabolism,0.32250050658446244
+97,Vitamin B2 metabolism,0.28039435018988496
+98,Vitamin B6 metabolism,2.326346206278561e-15
+99,Vitamin C metabolism,0.0005399206204450305
+100,Vitamin D metabolism,0.5598922826398895
+102,Xenobiotics metabolism,0.3092630600597224
