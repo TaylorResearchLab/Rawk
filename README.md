@@ -1,48 +1,40 @@
-# Rawk: Metabolic reaction network local enrichment analysis
-
-Rawk is a python package to identify and visualize locally enriched metabolic pathways in metabolic reaction networks.
+# Rawk
+A python package for metabolic pathway local enrichment analysis via random
+walks on metabolic reaction network.
 
 ## Install
 
-**Note** that Rawk currently can only be installed from local source files.
+**Note** that Rawk currently can only be installed from the source files in
+this repository.
 
-Following is an example procedure for installing Rawk on a Linux computer using command line tools:
-
-```bash
-# Download rawk-0.0.5.tar.gz
-
-tar -xvf rawk-0.0.5.tar.gz
-
-cd rawk-0.0.5
-
-pip install .
-```
-
-## Tutorials
-
-The tutorials of Rawk are the python scripts in the `docs/tutorials` folder contained in `rawk-0.0.5.tar.gz`. The `docs/tutorials` folder contains the following tutorials:
-
-- `construct_recon3d_met_net.py`: Construct a metabolic reaction network from a genome scale metabolic model.
-- `example_mouse_data_analysis.py`: Run Rawk standard analysis workflow on an example mouse dataset.
-- `example_human_data_analysis.py`: Run Rawk standard analysis workflow on an example human dataset.
-
-Following is an example procedure for running the tutorials on a Linux computer using command line tools:
-
-```bash
-python construct_recon3d_met_net.py
-
-python example_mouse_data_analysis.py
-
-python example_human_data_analysis.py
-```
+Rawk will be available on PyPI soon.
 
 ## Documentation
 
-Rawk package documentation can be accessed using `help` in python interpreter. For example, `help(rawk.Rawk)` shows the documentation of the `Rawk` class.
+### Tutorials
+
+The tutorials of Rawk are in the [`docs/tutorials`](docs/tutorials) folder,
+which contains the following tutorials:
+
+- `construct_recon3d_mrn.md`: Construct a metabolic reaction network from a
+  genome scale metabolic model.
+- `example_mouse_data_analysis.md`: Run Rawk standard analysis workflow on an
+  example mouse dataset.
+- `example_human_data_analysis.md`: Run Rawk standard analysis workflow on an
+  example human dataset.
+
+### API reference
+
+The API reference files of Rawk are in
+[`docs/api_reference`](docs/api_reference). The API reference files were
+generated from the package docstrings. The docstrings can also be accessed
+using `help` in python interpreter. For example, `help(rawk.Rawk)` shows the
+documentation of the `Rawk` class.
 
 ## Troubleshooting
 
-If you encounter any error related to `tkinter` multi-threading, try rerunning with `workers=1` or removing `tkinter` from the environment.
+If you encounter any error related to `tkinter` multi-threading, try rerunning
+with parameters set to use only one CPU core.
 
 ## Notice about license
 
