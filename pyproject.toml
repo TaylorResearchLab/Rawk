@@ -14,7 +14,7 @@ readme = "README.md"
 
 requires-python = "~=3.11"
 
-license = {file = "LICENSE.txt"}
+license-files = ["LICENSE.txt"]
 
 keywords = ["metabolism", "network", "enrichment"]
 
