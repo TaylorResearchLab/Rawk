@@ -1,0 +1,12 @@
+name: Test Python Package Build
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch: # Manual test button
+
+jobs:
+  run-build:
+    uses: ./.github/workflows/build.yml
