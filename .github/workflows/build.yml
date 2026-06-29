@@ -3,6 +3,9 @@ name: Build Python Package
 on:
   workflow_call: # Allows this workflow to be called by others
 
+permissions:
+  contents: read
+
 jobs:
   build_package:
     runs-on: ubuntu-latest
