@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* ======================================================== */
+        /* GLOBAL STYLES (Applies to both HTML webpage and PDF)     */
+        /* ======================================================== */
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            color: #111;
+            max-width: 800px; /* Optional: keeps web view easy to read */
+            margin: 0 auto;   /* Centers text on wide monitors */
+            padding: 20px;    /* Padding for the web view */
+        }
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: keep-all;
+            overflow-wrap: normal;
+            -webkit-line-break: after-white-space;
+            line-break: strict;
+            hyphens: none;
+        }
+        code {
+            font-family: monospace;
+            background: #f4f4f4;
+        }
+        img {
+            width: auto !important;
+            height: auto !important;
+            max-width: 50%;
+        }
+
+        /* ======================================================== */
+        /* PRINT STYLES (WeasyPrint reads this, Web Browsers ignore)*/
+        /* ======================================================== */
+        @media print {
+            body {
+                max-width: 100%; /* Let text fill the full printable width */
+                padding: 0;      /* Let @page margins handle spacing */
+                margin: 0;
+            }
+            @page {
+                size: letter;
+                margin: 1in;
+                @bottom-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-family: sans-serif;
+                    font-size: 9pt;
+                    color: #555;
+                }
+            }
+            /* Prevents a image from cutting
+               in half right across a PDF page break */
+            img {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Construct Recon3D metabolic reaction network</h1>
+<p>This tutorial shows how to use python to construct a metabolic reaction
+network (MRN) from the Recon3D genome scale metabolic model (GEM).</p>
+<h2>Import python dependencies</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pandas</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pd</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">cobra</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">networkx</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">nx</span>
+<span style="color: #008000; font-weight: bold">from</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">collections</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">import</span> defaultdict
+<span style="color: #008000; font-weight: bold">from</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">collections</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">import</span> Counter
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pathlib</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">os</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">numpy</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">np</span>
+</code></pre></div>
+
+<h2>Set up output directory</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>out_dir <span style="color: #666">=</span> <span style="color: #BA2121">&quot;tutorial_output/construct_recon3d_mrn&quot;</span>
+pathlib<span style="color: #666">.</span>Path(out_dir)<span style="color: #666">.</span>mkdir(parents<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+</code></pre></div>
+
+<h2>Read Recon3D GEM</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>met_model <span style="color: #666">=</span> cobra<span style="color: #666">.</span>io<span style="color: #666">.</span>load_matlab_model(
+    <span style="color: #BA2121">&quot;tutorial_data/Recon3D_301.mat&quot;</span>)
+
+<span style="color: #008000; font-weight: bold">assert</span> (
+    <span style="color: #008000">len</span>(met_model<span style="color: #666">.</span>reactions)
+    <span style="color: #666">==</span> <span style="color: #008000">len</span>(<span style="color: #008000">set</span>([x<span style="color: #666">.</span>id <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>reactions]))
+)
+<span style="color: #008000; font-weight: bold">assert</span> (
+    <span style="color: #008000">len</span>(met_model<span style="color: #666">.</span>metabolites)
+    <span style="color: #666">==</span> <span style="color: #008000">len</span>(<span style="color: #008000">set</span>([x<span style="color: #666">.</span>id <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>metabolites]))
+)
+</code></pre></div>
+
+<h2>Create a dataframe of MRN nodes</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rxn_gene_df <span style="color: #666">=</span> []
+<span style="color: #008000; font-weight: bold">for</span> i_rxn <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>reactions:
+    <span style="color: #008000; font-weight: bold">for</span> j <span style="color: #A2F; font-weight: bold">in</span> i_rxn<span style="color: #666">.</span>genes:
+        rxn_gene_df<span style="color: #666">.</span>append(
+            (i_rxn<span style="color: #666">.</span>id, i_rxn<span style="color: #666">.</span>name, j<span style="color: #666">.</span>id,
+             <span style="color: #008000">str</span>(i_rxn), i_rxn<span style="color: #666">.</span>bounds[<span style="color: #666">0</span>] <span style="color: #666">&lt;</span> <span style="color: #666">0</span>,
+             i_rxn<span style="color: #666">.</span>bounds[<span style="color: #666">1</span>] <span style="color: #666">&gt;</span> <span style="color: #666">0</span>, i_rxn<span style="color: #666">.</span>subsystem))
+
+<span style="color: #008000; font-weight: bold">del</span> i_rxn, j
+
+
+rxn_gene_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>DataFrame(
+    rxn_gene_df,
+    columns<span style="color: #666">=</span>[<span style="color: #BA2121">&quot;rxn&quot;</span>, <span style="color: #BA2121">&quot;rxn_name&quot;</span>, <span style="color: #BA2121">&quot;gene_id&quot;</span>,
+             <span style="color: #BA2121">&quot;equation&quot;</span>, <span style="color: #BA2121">&quot;rxn_dir_left&quot;</span>,
+             <span style="color: #BA2121">&quot;rxn_dir_right&quot;</span>, <span style="color: #BA2121">&quot;pathway&quot;</span>])
+
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> (rxn_gene_df[<span style="color: #BA2121">&quot;gene_id&quot;</span>] <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span>)<span style="color: #666">.</span>any()
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> rxn_gene_df[<span style="color: #BA2121">&quot;gene_id&quot;</span>]<span style="color: #666">.</span>isnull()<span style="color: #666">.</span>any()
+
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> (rxn_gene_df[<span style="color: #BA2121">&quot;pathway&quot;</span>] <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span>)<span style="color: #666">.</span>any()
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> rxn_gene_df[<span style="color: #BA2121">&quot;pathway&quot;</span>]<span style="color: #666">.</span>isnull()<span style="color: #666">.</span>any()
+
+<span style="color: #3D7B7B; font-style: italic"># Map Entrez Gene ID to gene symbols.</span>
+<span style="color: #3D7B7B; font-style: italic">#</span>
+<span style="color: #3D7B7B; font-style: italic"># The mappings were obtained using BioMart.</span>
+eid_gs_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>read_table(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        <span style="color: #BA2121">&quot;tutorial_data&quot;</span>,
+        <span style="color: #BA2121">&quot;biomart_ensembl_110_eid_hs_mapping.tsv&quot;</span>),
+    dtype<span style="color: #666">=</span><span style="color: #008000">str</span>)
+
+
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> eid_gs_df[<span style="color: #BA2121">&quot;gene_entrez_id&quot;</span>]<span style="color: #666">.</span>duplicated()<span style="color: #666">.</span>any()
+
+
+eid_gs_dict <span style="color: #666">=</span> <span style="color: #008000">dict</span>(<span style="color: #008000">zip</span>(
+    eid_gs_df[<span style="color: #BA2121">&quot;gene_entrez_id&quot;</span>], eid_gs_df[<span style="color: #BA2121">&quot;gene&quot;</span>]))
+
+
+<span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">extract_eid_pfx</span>(eid):
+    dot_pos <span style="color: #666">=</span> eid<span style="color: #666">.</span>find(<span style="color: #BA2121">&quot;.&quot;</span>)
+    <span style="color: #008000; font-weight: bold">if</span>  dot_pos <span style="color: #666">&gt;=</span> <span style="color: #666">0</span>:
+        ep <span style="color: #666">=</span> eid[:dot_pos]
+    <span style="color: #008000; font-weight: bold">else</span>:
+        <span style="color: #3D7B7B; font-style: italic"># not found</span>
+        ep <span style="color: #666">=</span> eid
+    <span style="color: #3D7B7B; font-style: italic">#</span>
+    <span style="color: #008000; font-weight: bold">return</span> ep
+
+
+mm_gid_gsb_dict <span style="color: #666">=</span> {}
+<span style="color: #008000; font-weight: bold">for</span> i <span style="color: #A2F; font-weight: bold">in</span> rxn_gene_df[<span style="color: #BA2121">&quot;gene_id&quot;</span>]<span style="color: #666">.</span>tolist():
+    i_gs <span style="color: #666">=</span> eid_gs_dict<span style="color: #666">.</span>get(extract_eid_pfx(i), <span style="color: #BA2121">&quot;&quot;</span>)
+    <span style="color: #3D7B7B; font-style: italic">#</span>
+    <span style="color: #008000; font-weight: bold">if</span> i <span style="color: #A2F; font-weight: bold">in</span> mm_gid_gsb_dict:
+        <span style="color: #008000; font-weight: bold">assert</span> mm_gid_gsb_dict[i] <span style="color: #666">==</span> i_gs
+    <span style="color: #008000; font-weight: bold">else</span>:
+        mm_gid_gsb_dict[i] <span style="color: #666">=</span> i_gs
+
+
+<span style="color: #008000; font-weight: bold">del</span> i
+
+m_rxn_gene_df <span style="color: #666">=</span> rxn_gene_df<span style="color: #666">.</span>copy()
+m_rxn_gene_df[<span style="color: #BA2121">&quot;gene&quot;</span>] <span style="color: #666">=</span> [
+    mm_gid_gsb_dict[x]
+    <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> m_rxn_gene_df[<span style="color: #BA2121">&quot;gene_id&quot;</span>]<span style="color: #666">.</span>tolist()
+]
+
+m_rxn_gene_df <span style="color: #666">=</span> m_rxn_gene_df<span style="color: #666">.</span>loc[
+    <span style="color: #666">~</span>m_rxn_gene_df[<span style="color: #BA2121">&quot;gene&quot;</span>]<span style="color: #666">.</span>str<span style="color: #666">.</span>fullmatch(<span style="color: #BA2121">&quot;&quot;</span>), :]
+
+m_rxn_gene_df <span style="color: #666">=</span> m_rxn_gene_df<span style="color: #666">.</span>loc[
+    :, [<span style="color: #BA2121">&quot;rxn&quot;</span>, <span style="color: #BA2121">&quot;rxn_name&quot;</span>, <span style="color: #BA2121">&quot;equation&quot;</span>, <span style="color: #BA2121">&quot;pathway&quot;</span>, <span style="color: #BA2121">&quot;gene&quot;</span>]]
+
+<span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">drop_dup_sort_rows</span>(df):
+    df <span style="color: #666">=</span> df<span style="color: #666">.</span>copy()
+    df <span style="color: #666">=</span> df<span style="color: #666">.</span>drop_duplicates()
+    df <span style="color: #666">=</span> df<span style="color: #666">.</span>sort_values(by<span style="color: #666">=</span>df<span style="color: #666">.</span>columns<span style="color: #666">.</span>tolist())
+    <span style="color: #008000; font-weight: bold">return</span> df
+
+
+m_rxn_gene_df <span style="color: #666">=</span> drop_dup_sort_rows(m_rxn_gene_df)
+</code></pre></div>
+
+<h2>Count the frequencies of metabolites in reactions</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">all</span>([
+    x<span style="color: #666">.</span>id[<span style="color: #666">-3</span>] <span style="color: #666">==</span> <span style="color: #BA2121">&quot;[&quot;</span> <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>metabolites])
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">all</span>([
+    x<span style="color: #666">.</span>id[<span style="color: #666">-1</span>] <span style="color: #666">==</span> <span style="color: #BA2121">&quot;]&quot;</span> <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>metabolites])
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">all</span>([
+    x<span style="color: #666">.</span>id[<span style="color: #666">-2</span>] <span style="color: #666">==</span> x<span style="color: #666">.</span>compartment
+    <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>metabolites])
+
+
+rxn_met_list <span style="color: #666">=</span> []
+<span style="color: #008000; font-weight: bold">for</span> i <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>reactions:
+    <span style="color: #008000; font-weight: bold">for</span> j <span style="color: #A2F; font-weight: bold">in</span> i<span style="color: #666">.</span>metabolites:
+        rxn_met_list<span style="color: #666">.</span>append(j<span style="color: #666">.</span>id)
+        <span style="color: #008000; font-weight: bold">assert</span> j<span style="color: #666">.</span>compartment <span style="color: #666">==</span> j<span style="color: #666">.</span>id[<span style="color: #666">-2</span>]
+
+<span style="color: #008000; font-weight: bold">del</span> i, j
+
+met_counter <span style="color: #666">=</span> Counter([x <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> rxn_met_list])
+
+compartment_counter <span style="color: #666">=</span> Counter(
+    [x[<span style="color: #666">-2</span>] <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> rxn_met_list])
+
+f_mets <span style="color: #666">=</span> <span style="color: #008000">set</span>([
+    <span style="color: #BA2121">&quot;h&quot;</span>, <span style="color: #BA2121">&quot;h2o&quot;</span>, <span style="color: #BA2121">&quot;atp&quot;</span>, <span style="color: #BA2121">&quot;pi&quot;</span>, <span style="color: #BA2121">&quot;adp&quot;</span>, <span style="color: #BA2121">&quot;na1&quot;</span>, <span style="color: #BA2121">&quot;nadp&quot;</span>, <span style="color: #BA2121">&quot;nadph&quot;</span>, <span style="color: #BA2121">&quot;coa&quot;</span>,
+    <span style="color: #BA2121">&quot;o2&quot;</span>, <span style="color: #BA2121">&quot;hco3&quot;</span>, <span style="color: #BA2121">&quot;crn&quot;</span>, <span style="color: #BA2121">&quot;ppi&quot;</span>, <span style="color: #BA2121">&quot;nad&quot;</span>, <span style="color: #BA2121">&quot;amp&quot;</span>, <span style="color: #BA2121">&quot;nadh&quot;</span>, <span style="color: #BA2121">&quot;co2&quot;</span>, <span style="color: #BA2121">&quot;udp&quot;</span>,
+    <span style="color: #BA2121">&quot;h2o2&quot;</span>, <span style="color: #BA2121">&quot;nh4&quot;</span>, <span style="color: #BA2121">&quot;cl&quot;</span>, <span style="color: #BA2121">&quot;accoa&quot;</span>, <span style="color: #BA2121">&quot;ppcoa&quot;</span>, <span style="color: #BA2121">&quot;fad&quot;</span>, <span style="color: #BA2121">&quot;fadh2&quot;</span>, <span style="color: #BA2121">&quot;occoa&quot;</span>,
+    <span style="color: #BA2121">&quot;amp&quot;</span>, <span style="color: #BA2121">&quot;chsterol&quot;</span>, <span style="color: #BA2121">&quot;so4&quot;</span>,
+])
+
+
+met_weight_dict <span style="color: #666">=</span> {}
+<span style="color: #008000; font-weight: bold">for</span> k, v <span style="color: #A2F; font-weight: bold">in</span> met_counter<span style="color: #666">.</span>items():
+    <span style="color: #008000; font-weight: bold">if</span> k[:<span style="color: #666">-3</span>] <span style="color: #A2F; font-weight: bold">in</span> f_mets:
+        met_weight_dict[k] <span style="color: #666">=</span> <span style="color: #666">0</span>
+    <span style="color: #008000; font-weight: bold">else</span>:
+        met_weight_dict[k] <span style="color: #666">=</span> compartment_counter[k[<span style="color: #666">-2</span>]] <span style="color: #666">/</span> v
+
+<span style="color: #008000; font-weight: bold">del</span> k, v
+
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">min</span>(<span style="color: #008000">list</span>(met_weight_dict<span style="color: #666">.</span>values())) <span style="color: #666">&gt;=</span> <span style="color: #666">0</span>
+</code></pre></div>
+
+<h2>Create a dataframe of MRN edges</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>edge_dict <span style="color: #666">=</span> {}
+<span style="color: #008000; font-weight: bold">for</span> i_rxn <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>reactions:
+    i_mets <span style="color: #666">=</span> <span style="color: #008000">set</span>([x<span style="color: #666">.</span>id <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> i_rxn<span style="color: #666">.</span>metabolites])
+    <span style="color: #008000; font-weight: bold">for</span> j_rxn <span style="color: #A2F; font-weight: bold">in</span> met_model<span style="color: #666">.</span>reactions:
+        j_mets <span style="color: #666">=</span> [x<span style="color: #666">.</span>id <span style="color: #008000; font-weight: bold">for</span> x <span style="color: #A2F; font-weight: bold">in</span> j_rxn<span style="color: #666">.</span>metabolites]
+        <span style="color: #3D7B7B; font-style: italic"># weight between i and j, so init 0</span>
+        weight <span style="color: #666">=</span> <span style="color: #666">0</span>
+        <span style="color: #008000; font-weight: bold">for</span> k <span style="color: #A2F; font-weight: bold">in</span> j_mets:
+            <span style="color: #008000; font-weight: bold">if</span> k <span style="color: #A2F; font-weight: bold">in</span> i_mets:
+                weight <span style="color: #666">+=</span> met_weight_dict[k]
+        <span style="color: #3D7B7B; font-style: italic">#</span>
+        <span style="color: #3D7B7B; font-style: italic"># undirected graph</span>
+        edge_key <span style="color: #666">=</span> <span style="color: #008000">tuple</span>(<span style="color: #008000">sorted</span>([i_rxn<span style="color: #666">.</span>id, j_rxn<span style="color: #666">.</span>id]))
+        <span style="color: #008000; font-weight: bold">if</span> edge_key <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #A2F; font-weight: bold">in</span> edge_dict:
+            edge_dict[edge_key] <span style="color: #666">=</span> weight
+        <span style="color: #008000; font-weight: bold">else</span>:
+            <span style="color: #008000; font-weight: bold">assert</span> weight <span style="color: #666">==</span> edge_dict[edge_key]
+
+
+<span style="color: #008000; font-weight: bold">del</span> i_rxn, j_rxn, i_mets, j_mets, weight, k, edge_key
+
+
+edge_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>DataFrame(
+    [(k[<span style="color: #666">0</span>], k[<span style="color: #666">1</span>], v) <span style="color: #008000; font-weight: bold">for</span> k, v <span style="color: #A2F; font-weight: bold">in</span> edge_dict<span style="color: #666">.</span>items()],
+    columns<span style="color: #666">=</span>[<span style="color: #BA2121">&quot;src&quot;</span>, <span style="color: #BA2121">&quot;dest&quot;</span>, <span style="color: #BA2121">&quot;mn_weight&quot;</span>]
+)
+
+<span style="color: #008000; font-weight: bold">assert</span> (
+    <span style="color: #008000">set</span>(edge_df[<span style="color: #BA2121">&quot;src&quot;</span>]<span style="color: #666">.</span>tolist())
+    <span style="color: #666">==</span> <span style="color: #008000">set</span>(edge_df[<span style="color: #BA2121">&quot;dest&quot;</span>]<span style="color: #666">.</span>tolist())
+)
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> edge_df<span style="color: #666">.</span>duplicated()<span style="color: #666">.</span>any()
+<span style="color: #008000; font-weight: bold">assert</span> <span style="color: #A2F; font-weight: bold">not</span> edge_df<span style="color: #666">.</span>duplicated(subset<span style="color: #666">=</span>[<span style="color: #BA2121">&quot;src&quot;</span>, <span style="color: #BA2121">&quot;dest&quot;</span>])<span style="color: #666">.</span>any()
+</code></pre></div>
+
+<h2>Output MRN node and edge dataframes</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>m_rxn_gene_df<span style="color: #666">.</span>to_csv(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir,
+        <span style="color: #BA2121">&quot;recon3d_unfiltered_nodes.tsv&quot;</span>),
+    sep<span style="color: #666">=</span><span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\t</span><span style="color: #BA2121">&quot;</span>, index<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>)
+
+
+<span style="color: #3D7B7B; font-style: italic"># Only output pruned edges to save file hosting space</span>
+edge_weights <span style="color: #666">=</span> edge_df[<span style="color: #BA2121">&quot;mn_weight&quot;</span>]<span style="color: #666">.</span>values
+
+edge_weight_threshold <span style="color: #666">=</span> np<span style="color: #666">.</span>round(
+    np<span style="color: #666">.</span>percentile(
+        edge_weights[edge_weights <span style="color: #666">&gt;</span> <span style="color: #666">0</span>],
+        <span style="color: #666">20</span>),
+    <span style="color: #666">3</span>)
+
+pruned_edge_df <span style="color: #666">=</span> edge_df<span style="color: #666">.</span>loc[
+    edge_df[<span style="color: #BA2121">&quot;mn_weight&quot;</span>] <span style="color: #666">&gt;</span> edge_weight_threshold, :]
+
+pruned_edge_df<span style="color: #666">.</span>to_csv(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir,
+        <span style="color: #BA2121">&quot;recon3d_pruned_edges.tsv.gz&quot;</span>),
+    sep<span style="color: #666">=</span><span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\t</span><span style="color: #BA2121">&quot;</span>, index<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>,
+    compression<span style="color: #666">=</span>{
+        <span style="color: #BA2121">&quot;method&quot;</span>: <span style="color: #BA2121">&quot;gzip&quot;</span>,
+        <span style="color: #BA2121">&quot;compresslevel&quot;</span>: <span style="color: #666">1</span>,
+        <span style="color: #BA2121">&quot;mtime&quot;</span>: <span style="color: #666">1</span>})
+</code></pre></div>
+
+    <!-- Explicit marker to guarantee document integrity -->
+    <div class="doc-end">&#9632; End of Document &#9632;</div>
+</body>
+</html>

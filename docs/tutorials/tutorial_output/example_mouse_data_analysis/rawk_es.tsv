@@ -1,0 +1,72 @@
+pathway	ActivatedMyeloidCells___aPD1aCTLA4_rawk
+Alanine and Aspartate Metabolism	0.0
+Aminosugar Metabolism	0.19253911850335578
+Arginine and Proline Metabolism	-0.44541129481049124
+Ascorbate and Aldarate Metabolism	2.1356080346499384
+Bile Acid Biosynthesis	0.7269664046007562
+Blood Group Biosynthesis	-1.1255727155640005
+Butanoate Metabolism	-0.5237160463857484
+CYP Metabolism	-0.2584213125856543
+Carnitine shuttle	0.0936132326360292
+Cholesterol Metabolism	0.25481819875008627
+Chondroitin / heparan sulfate biosynthesis	-0.2335466800910581
+Chondroitin sulfate degradation	0.23761376763491776
+Citric Acid Cycle	0.35701967020105974
+CoA Biosynthesis	0.05516693598259087
+Cysteine Metabolism	0.2468030088612082
+Eicosanoid Metabolism	0.041203552425990664
+Fatty Acid Metabolism	-0.3311665799737971
+Fatty acid activation	0.5674825993241979
+Fatty acid elongation	-0.7262581233129993
+Fatty acid oxidation	0.3927518869341349
+Fatty acid oxidation, peroxisome	0.06743990237926756
+Folate Metabolism	0.23594809166592937
+Fructose and Mannose Metabolism	0.05688321642382498
+Galactose metabolism	0.35540932075815385
+Glutamate metabolism	-0.12347244796216789
+Glutathione Metabolism	0.3191813493363753
+Glycerophospholipid Metabolism	0.05575095843746893
+Glycine, Serine, and Threonine Metabolism	-0.051197791247758556
+Glycolysis/Gluconeogenesis	0.25756945464218883
+Glycosylphosphatidylinositol (GPI)-anchor biosynthesis	-0.04096997936000829
+Glyoxylate and Dicarboxylate Metabolism	0.10729813439555658
+Heme Biosynthesis	-1.5156244516267259
+Heparan sulfate degradation	0.08903829226474246
+Histidine Metabolism	0.18032020125193493
+Hyaluronan Metabolism	0.017244275430093964
+IMP Biosynthesis	0.14725486568064777
+Inositol Phosphate Metabolism	-0.004849876927300972
+Keratan sulfate biosynthesis	-0.01701671485703458
+Keratan sulfate degradation	0.07780103206987199
+Lysine Metabolism	-0.08569100084915841
+Methionine Metabolism	0.10038465138066761
+N-Glycan Biosynthesis	0.21845619525582172
+N-Glycan Degradation	-0.059547523632913366
+NAD Metabolism	0.3373684506030876
+Nucleotides	0.2727606187571806
+O-Glycan Biosynthesis	-0.296371794317632
+Oxidative Phosphorylation	0.6773548488932842
+Pentose Phosphate Pathway	0.312388479387347
+Pentose and Glucuronate Interconversions	-0.386610077986736
+Phenylalanine metabolism	0.3536558963025555
+Propanoate Metabolism	0.2713393010213028
+Pyrimidine Biosynthesis	-0.03937970812010118
+Pyrimidine Catabolism	0.10344471511363436
+Pyruvate Metabolism	0.12270421299923902
+Selenoamino acid metabolism	0.2864373277429338
+Sphingolipid Metabolism	-0.11445883773144767
+Starch and Sucrose Metabolism	-0.16684303089132832
+Steroid Metabolism	-0.7583552365053692
+Taurine and hypotaurine metabolism	0.5935509500989085
+Tetrahydrobiopterin	1.3733141867613943
+Transport, Extracellular	-0.18057248525612724
+Transport, Golgi Apparatus	0.16832179455101756
+Transport, Lysosomal	0.24917174754647115
+Transport, Mitochondrial	-0.1921466110625148
+Triacylglycerol Synthesis	-0.5160366963670656
+Tryptophan metabolism	0.25386016438021725
+Tyrosine metabolism	-0.1814584500628373
+Urea cycle/amino group metabolism	0.24210206294261813
+Valine, Leucine, and Isoleucine Metabolism	0.16977763316550384
+Vitamin A Metabolism	0.43589145011314473
+beta-Alanine metabolism	0.3700028154492991
