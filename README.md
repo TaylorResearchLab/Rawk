@@ -5,10 +5,9 @@ walks on metabolic reaction network.
 
 ## Install
 
-**Note** that Rawk currently can only be installed from the source files in
-this repository.
-
-Rawk will be available on PyPI soon.
+```bash
+pip install rawk
+```
 
 ## Documentation
 
