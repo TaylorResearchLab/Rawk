@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* ======================================================== */
+        /* GLOBAL STYLES (Applies to both HTML webpage and PDF)     */
+        /* ======================================================== */
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            color: #111;
+            max-width: 800px; /* Optional: keeps web view easy to read */
+            margin: 0 auto;   /* Centers text on wide monitors */
+            padding: 20px;    /* Padding for the web view */
+        }
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: keep-all;
+            overflow-wrap: normal;
+            -webkit-line-break: after-white-space;
+            line-break: strict;
+            hyphens: none;
+        }
+        code {
+            font-family: monospace;
+            background: #f4f4f4;
+        }
+        img {
+            width: auto !important;
+            height: auto !important;
+            max-width: 50%;
+        }
+
+        /* ======================================================== */
+        /* PRINT STYLES (WeasyPrint reads this, Web Browsers ignore)*/
+        /* ======================================================== */
+        @media print {
+            body {
+                max-width: 100%; /* Let text fill the full printable width */
+                padding: 0;      /* Let @page margins handle spacing */
+                margin: 0;
+            }
+            @page {
+                size: letter;
+                margin: 1in;
+                @bottom-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-family: sans-serif;
+                    font-size: 9pt;
+                    color: #555;
+                }
+            }
+            /* Prevents a image from cutting
+               in half right across a PDF page break */
+            img {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>rawk</h1>
+<hr />
+<h2>rawk.fastrp</h2>
+<h3>fastrp_merge(U_list, weights, normalization=False) <code>[Function]</code></h3>
+<h3>fastrp_projection(<br>&nbsp;&nbsp;&nbsp;&nbsp;A,<br>&nbsp;&nbsp;&nbsp;&nbsp;q=3,<br>&nbsp;&nbsp;&nbsp;&nbsp;dim=128,<br>&nbsp;&nbsp;&nbsp;&nbsp;projection_method='gaussian',<br>&nbsp;&nbsp;&nbsp;&nbsp;input_matrix='adj',<br>&nbsp;&nbsp;&nbsp;&nbsp;alpha=None) <code>[Function]</code></h3>
+<h3>fastrp_wrapper(A, conf) <code>[Function]</code></h3>
+<hr />
+<h2>rawk.input_prep</h2>
+<h3>get_met_net_dfs(<br>&nbsp;&nbsp;&nbsp;&nbsp;rxn_gene_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;rxn_edge_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;gene_prop_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;mn_weight_cutoff,<br>&nbsp;&nbsp;&nbsp;&nbsp;fill_missing_gene_prop=0,<br>&nbsp;&nbsp;&nbsp;&nbsp;transform_gene_prop_func=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;rxn_gene_prop_agg_func=None) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Prepare input node and edge dataframes for Rawk
+
+Parameters
+----------
+rxn_gene_df : dataframe
+    A dataframe of reactions and their associated genes. Following are the
+    required columns: &#39;rxn&#39; (reaction ID), &#39;rxn_name&#39; (reaction name),
+    &#39;equation&#39; (reaction equation), &#39;pathway&#39; (reaction pathway), and
+    &#39;gene&#39; (gene symbol). If a reaction is associated with multiple genes,
+    one row lists one associated gene.
+rxn_edge_df : dataframe
+    A dataframe of reactions edges. Following are the required columns:
+    &#39;src&#39; (source node reaction ID), &#39;dest&#39; (destination node reaction ID),
+    &#39;mn_weight&#39; (metabolic network edge weight). The edges are undirected,
+    with the src &lt;= dest in alphabetical order.
+gene_prop_df : dataframe
+    A dataframe of gene properties, such as log fold changes, normalized
+    read counts, and z-scores. The &#39;gene&#39; column of the dataframe is a
+    list of gene symbols. Other columns of the dataframe are the gene
+    properties of samples.
+mn_weight_cutoff : float
+    The cutoff of metabolic network weights. Keep only edges with weights &gt;
+    mn_weight_cutoff.
+fill_missing_gene_prop : int, or float, or None
+    If int or float, replace missing gene properties with this value.
+    If None, drop genes with missing properties.
+transform_gene_prop_func : function
+    A function to transform each property column.
+rxn_gene_prop_agg_func : function or None
+    The function used to aggregate the property values of multiple genes
+    that are associated with each reaction. If None, use
+    lambda x: x.mean() to aggregate.
+
+Returns
+-------
+(dataframe, dataframe)
+    A 2-tuple of a reaction node property dataframe and a reaction edge
+    dataframe
+</code></pre></div>
+
+<h3>get_mrn_gp_df(<br>&nbsp;&nbsp;&nbsp;&nbsp;gene_prop_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;rxn_gene_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;fill_missing_gene_prop=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;transform_gene_prop_func=None) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Prepare metabolic reaction network gene property dataframe
+
+Parameters
+----------
+gene_prop_df : dataframe
+    A dataframe of gene properties, such as log fold changes, normalized
+    read counts, and z-scores. The &#39;gene&#39; column of the dataframe is a
+    list of gene symbols. Other columns of the dataframe are the gene
+    properties of samples.
+rxn_gene_df : dataframe
+    A dataframe of reactions and their associated genes. Following are the
+    required columns: &#39;rxn&#39; (reaction ID), &#39;rxn_name&#39; (reaction name),
+    &#39;equation&#39; (reaction equation), &#39;pathway&#39; (reaction pathway), and
+    &#39;gene&#39; (gene symbol). If a reaction is associated with multiple genes,
+    one row lists one associated gene.
+fill_missing_gene_prop : int, or float, or None
+    If int or float, replace missing gene properties with this value.
+    If None, drop genes with missing properties.
+transform_gene_prop_func : function
+    A function to transform each property column. If None, no
+    transformation will be applied.
+
+Returns
+-------
+dataframe
+</code></pre></div>
+
+<h3>qn_transform(<br>&nbsp;&nbsp;&nbsp;&nbsp;s,<br>&nbsp;&nbsp;&nbsp;&nbsp;sigma=0.367879,<br>&nbsp;&nbsp;&nbsp;&nbsp;log1p=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;collapse_0s=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;center=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=42) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Quantile transform gene properties to normal distribution
+
+Parameters
+----------
+s : series
+    A pandas.Series of gene properties, such as log fold changes,
+    normalized read counts, and z-scores.
+sigma : float
+    Output normal distribution sigma. Default to
+    np.round(1 / np.e, 6), so np.e ** (sigma * (3 - (-3))) ~= 9.
+log1p : bool
+    Apply log1p transform on the properties or not, before
+    quantile normalization.
+collapse_0s : bool
+    If True, all 0s will be collapse into one 0, and the 0&#39;s
+    quantile normalized value will be assigned to all 0s.
+center : bool
+    If True, the tranformed values will be centered at the input 0s.
+seed : int
+    Random state.
+
+Returns
+-------
+Series after transformation
+</code></pre></div>
+
+<h3>transform_gene_prop(gene_prop_df, transform) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Apply transform function to each property column
+
+Parameters
+----------
+gene_prop_df : dataframe
+    A dataframe of gene properties, such as log fold changes, normalized
+    read counts, and z-scores. The &#39;gene&#39; column of the dataframe is a
+    list of gene symbols. Other columns of the dataframe are the gene
+    properties of samples.
+transform : function
+    A function to transform each property column.
+
+Returns
+-------
+dataframe after transformation
+</code></pre></div>
+
+<hr />
+<h2>rawk.multisample_rawk</h2>
+<h3>MultiSampleRawk(<br>&nbsp;&nbsp;&nbsp;&nbsp;node_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;edge_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;bg_sample_col=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;n_jobs=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=17,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_emb_method='fastrp',<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_walk_length=20,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_num_walks=8000,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_chunk_num_walks=1000,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_p=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_q=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_dimensions=50,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_window=10,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_epochs=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;random_walk_n_steps_method=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;n_workers_per_sample=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;verbose=False) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Run Rawk on multiple samples
+
+Parameters
+----------
+node_df : dataframe
+    The reaction node dataframe with the following columns:
+    &#39;rxn&#39;, &#39;pathway&#39;, &#39;gene&#39;, &#39;sample1&#39;, &#39;sample2&#39;, &#39;sample3&#39;, ....
+    Each value of the &#39;gene&#39; column is a ;;; joined list of gene
+    symbols.
+edge_df : dataframe
+    The reaction edge dataframe with the following columns:
+    &#39;src&#39;, &#39;dest&#39;, &#39;mn_weight&#39;.
+bg_sample_col : str or None
+    The column in node_df used as background. If bg_sample_col is None, a
+    uniform background sample will be created.
+n_jobs : int
+    The number of jobs for running each sample parallely. Note that
+    the number of CPUs for running each sample is set by
+    n_workers_per_sample.
+seed : int
+    Random number seed.
+node_emb_method : str or dict
+    The method to set node embeddings, which can be one of the following
+    options:
+    - &#39;fastrp&#39;: Compute 2D t-SNE from fastrp node embeddings.
+    - &#39;node2vec&#39;: Compute 2D t-SNE from node2vec node embeddings.
+      This procedure may take several hours.
+    - dict: Reuse pre-computed 2D embeddings of nodes stored in a dict
+      with the following format:
+      {node_name1: (dim1_coord, dim2_coord), ...}.
+n2v_walk_length : int
+    node2vec walk length parameter.
+n2v_num_walks : int
+    node2vec number of walks parameter.
+n2v_chunk_num_walks : int
+    node2vec number of walks per chunk. Run node2vec in chunks to reduce
+    mem usage.
+n2v_p : float
+    node2vec p parameter.
+n2v_q : float
+    node2vec q parameter.
+n2v_dimensions : int
+    node2vec number of representation dimensions.
+n2v_window : int
+    node2vec window parameter.
+n2v_epochs : int
+    node2vec number of epochs parameter.
+random_walk_n_steps_method : str
+    Generate random walk number of steps with one of the following methods:
+    - &#39;simulation&#39;: Simulate random walks. Aggregate number of steps.
+    - &#39;calculation&#39;: Calculate number of steps using transition probabity
+      matrix. NOTE: This method is only implemented for n2v_p=1 and n2v_q=1.
+      If node_emb_method=&#39;node2vec&#39;, the random walks still need to be
+      simulated.
+    - None: When n2v_p=1 and n2v_q=1, use the calculation method. Otherwise,
+      use  the simulation method.
+n_workers_per_sample : int
+    The number of workers to run each sample.
+verbose : bool
+    Print runtime messages or not.
+</code></pre></div>
+
+<h4><code>MultiSampleRawk.set_node_emb(node_emb_method, pca_ndim=None, kmeans_n_clust=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Set node embeddings
+
+Parameters
+----------
+node_emb_method : str or dict
+    The method to set node embeddings, which can be one of the
+    following options:
+    - &#39;fastrp&#39;: Compute 2D t-SNE from fastrp node embeddings.
+    - &#39;node2vec&#39;: Compute 2D t-SNE from node2vec node embeddings.
+      This procedure may take several hours.
+    - dict: Reuse pre-computed 2D embeddings of nodes stored in a dict
+      with the following format:
+      {node_name1: (dim1_coord, dim2_coord), ...}. In this option,
+      pca_ndim and kmeans_n_clust should be None.
+pca_ndim : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of PCA
+    dimensions of the fastrp or node2vec embeddings to compute 2D t-SNE
+    and kmeans clusters. If pca_ndim is None, default pca_ndim=6.
+kmeans_n_clust : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of
+    clusters parameter to run kmeans clustering. If None, default
+    pca_ndim=10.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h4><code>MultiSampleRawk.test_num_steps(h_exponent=1, cmp_norm_fac=5000, pw_subset=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the number of random walk steps
+
+Parameters
+----------
+h_exponent : float
+    The heuristic factor for exponentiating sample vs background
+    fold changes of the number of random walk steps. This heuristic
+    factor intends to distinguish pathways with relatively small and
+    large effect sizes.
+cmp_norm_fac : float
+    Normaliziation factor for the number of random walk steps.
+pw_subset : set, or list, or None
+    The subset of pathways to keep in the result dataframes.
+    If is None, keep all pathways with not-NA results.
+
+Returns
+-------
+A 2-tuple of (fdr_dataframe, enrichment_score_dataframe).
+</code></pre></div>
+
+<h4><code>MultiSampleRawk.test_property_values(rw_s_prop_cutoff=0.005, s_ppd_dict=None, pw_subset=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the node property values
+
+Parameters
+----------
+rw_s_prop_cutoff : float
+    The cutoff proportion of random walk steps used for defininig local
+    pathways.
+s_ppd_dict : dict or None
+    {sample1: {pathway1: [property_value1, ...], ...}, ...} dict used
+    for extracting pathway property values for testing. If None, use
+    the foreground sample node properties.
+pw_subset : set, or list, or None
+    The subset of pathways to keep in the result dataframes.
+    If is None, keep all pathways with not-NA results.
+
+Returns
+-------
+A 2-tuple of (fdr_dataframe, enrichment_score_dataframe).
+</code></pre></div>
+
+<h3>MultiSampleRawkTest(rawk_test_list) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Run RawkTest on multiple samples
+
+Parameters
+----------
+rawk_test_list : list of RawkTest
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.from_list(dl)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Construct a MultiSampleRawkTest from a list
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.load_json(file_path)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Read json files
+
+Parameters
+----------
+file_path : str
+    Read file prefix.
+
+Returns
+-------
+A MultiSampleRawkTest constructed from the read data.
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.merge_test_res(test_res_list)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Merge a list of test results generated by Rawk.test_res_dict_to_df
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.save_to_json(file_path)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Save data to a json file
+
+Parameters
+----------
+file_path : str
+    Save json file path.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.test_num_steps(h_exponent=1, cmp_norm_fac=5000, pw_subset=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the number of random walk steps
+
+Parameters
+----------
+h_exponent : float
+    The heuristic factor for exponentiating sample vs background
+    fold changes of the number of random walk steps. This heuristic
+    factor intends to distinguish pathways with relatively small and
+    large effect sizes.
+
+cmp_norm_fac : float
+    Normaliziation factor for the number of random walk steps.
+
+pw_subset : set, or list, or None
+    The subset of pathways to keep in the result dataframes.
+    If is None, keep all pathways with not-NA results.
+
+Returns
+-------
+A 2-tuple of (fdr_dataframe, enrichment_score_dataframe).
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.test_property_values(rw_s_prop_cutoff=0.005, s_ppd_dict=None, pw_subset=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the node property values
+
+Parameters
+----------
+rw_s_prop_cutoff : float
+    The cutoff proportion of random walk steps used for defininig local
+    pathways.
+s_ppd_dict : dict or None
+    {sample1: {pathway1: [property_value1, ...], ...}, ...} dict used
+    for extracting pathway property values for testing. If None, use
+    the foreground sample node properties.
+
+pw_subset : set, or list, or None
+    The subset of pathways to keep in the result dataframes.
+    If is None, keep all pathways with not-NA results.
+
+Returns
+-------
+A 2-tuple of (fdr_dataframe, enrichment_score_dataframe).
+</code></pre></div>
+
+<h4><code>MultiSampleRawkTest.to_list()</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Convert data to a list
+</code></pre></div>
+
+<hr />
+<h2>rawk.n2v</h2>
+<h3>RawkNode2Vec(<br>&nbsp;&nbsp;&nbsp;&nbsp;node_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;ea_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;p=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;q=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;num_walks=8000,<br>&nbsp;&nbsp;&nbsp;&nbsp;chunk_num_walks=1000,<br>&nbsp;&nbsp;&nbsp;&nbsp;walk_length=20,<br>&nbsp;&nbsp;&nbsp;&nbsp;workers=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=17,<br>&nbsp;&nbsp;&nbsp;&nbsp;keep_walks=False) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Mem efficient chunked Node2Vec
+</code></pre></div>
+
+<h4><code>RawkNode2Vec.get_visit_arr()</code> <code>[Method]</code></h4>
+<hr />
+<h2>rawk.plot</h2>
+<h3>adjust_plot_pos(<br>&nbsp;&nbsp;&nbsp;&nbsp;pos,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_sizes_in,<br>&nbsp;&nbsp;&nbsp;&nbsp;fig,<br>&nbsp;&nbsp;&nbsp;&nbsp;ax,<br>&nbsp;&nbsp;&nbsp;&nbsp;padding_in=0.1,<br>&nbsp;&nbsp;&nbsp;&nbsp;iterations=200,<br>&nbsp;&nbsp;&nbsp;&nbsp;force_step_in=0.05,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=42) <code>[Function]</code></h3>
+<h3>assert_allclose(x, y) <code>[Function]</code></h3>
+<h3>assert_frame_equal(x, y) <code>[Function]</code></h3>
+<h3>expand_v0range(vmin, vmax) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>If vmin == vmax, make them different
+</code></pre></div>
+
+<h3>get_color_mapper(vmin, vmax, vcenter=None, cmap_name=None) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Creates a color mapper function.
+
+Parameters:
+-----------
+vmin, vmax : float
+    The minimum and maximum limits of the data.
+vcenter : float, optional
+    The center point (e.g., 0). If None, standard linear
+    mapping is used.
+cmap_name : str, optional
+    The name of the Matplotlib colormap. If None, centered
+    use seismic, otherwise viridis.
+
+Returns:
+--------
+mapper : matplotlib.cm.ScalarMappable
+    An object with a .to_rgba(value) method to fetch colors.
+</code></pre></div>
+
+<h3>hist(<br>&nbsp;&nbsp;&nbsp;&nbsp;data,<br>&nbsp;&nbsp;&nbsp;&nbsp;n_bins,<br>&nbsp;&nbsp;&nbsp;&nbsp;title,<br>&nbsp;&nbsp;&nbsp;&nbsp;xlab,<br>&nbsp;&nbsp;&nbsp;&nbsp;ylab,<br>&nbsp;&nbsp;&nbsp;&nbsp;filename,<br>&nbsp;&nbsp;&nbsp;&nbsp;figsize=(1.8,<br>&nbsp;&nbsp;&nbsp;&nbsp;1.5)) <code>[Function]</code></h3>
+<h3>map_strings_to_colors(strings, palette) <code>[Function]</code></h3>
+<h3>plot_elbow(metric_by_n, selected_n, save_pfx, xlab, ylab, annot) <code>[Function]</code></h3>
+<h3>plot_graph(<br>&nbsp;&nbsp;&nbsp;&nbsp;G,<br>&nbsp;&nbsp;&nbsp;&nbsp;pos,<br>&nbsp;&nbsp;&nbsp;&nbsp;filename,<br>&nbsp;&nbsp;&nbsp;&nbsp;s_pw=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_attr='property',<br>&nbsp;&nbsp;&nbsp;&nbsp;draw_edges=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;draw_labels=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;non_s_pw_node_size=10,<br>&nbsp;&nbsp;&nbsp;&nbsp;s_pw_node_size=150,<br>&nbsp;&nbsp;&nbsp;&nbsp;title=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;figsize=(3,<br>&nbsp;&nbsp;&nbsp;&nbsp;3),<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=42,<br>&nbsp;&nbsp;&nbsp;&nbsp;dim_name='Dim',<br>&nbsp;&nbsp;&nbsp;&nbsp;discrete_color=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;cmap=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_alpha=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;edge_width=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;dpi=300,<br>&nbsp;&nbsp;&nbsp;&nbsp;discrete_col_legend_ncol=3,<br>&nbsp;&nbsp;&nbsp;&nbsp;edge_alpha=None) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Plot networkx graph
+
+Parameters
+----------
+cmap : str, dict, optional
+    If discrete_color, cmap is a dictionary to map
+    node_color_attr values to colors. If not discrete_color,
+    cmap is a string. If None, discrete_color cmap is from
+    R package ggsci::pal_jco, and not discrete_color cmap is
+    &#39;viridis&#39;.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h3>plot_mtx(<br>&nbsp;&nbsp;&nbsp;&nbsp;mtx,<br>&nbsp;&nbsp;&nbsp;&nbsp;row_labels,<br>&nbsp;&nbsp;&nbsp;&nbsp;col_labels,<br>&nbsp;&nbsp;&nbsp;&nbsp;cbar_title,<br>&nbsp;&nbsp;&nbsp;&nbsp;figsize,<br>&nbsp;&nbsp;&nbsp;&nbsp;filename,<br>&nbsp;&nbsp;&nbsp;&nbsp;cbar_hm_space,<br>&nbsp;&nbsp;&nbsp;&nbsp;vmin=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;vmax=None) <code>[Function]</code></h3>
+<h3>plot_nw_stats(<br>&nbsp;&nbsp;&nbsp;&nbsp;uf_ntbl,<br>&nbsp;&nbsp;&nbsp;&nbsp;uf_etbl,<br>&nbsp;&nbsp;&nbsp;&nbsp;mn_weight_cutoff,<br>&nbsp;&nbsp;&nbsp;&nbsp;mn_weight_cutoff_label,<br>&nbsp;&nbsp;&nbsp;&nbsp;title_pfx,<br>&nbsp;&nbsp;&nbsp;&nbsp;fn_pfx) <code>[Function]</code></h3>
+<h3>plot_pw_neighborhood(<br>&nbsp;&nbsp;&nbsp;&nbsp;rawk,<br>&nbsp;&nbsp;&nbsp;&nbsp;s_pw,<br>&nbsp;&nbsp;&nbsp;&nbsp;filename,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_attr,<br>&nbsp;&nbsp;&nbsp;&nbsp;mean_node_color_attr=True,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_vmin=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_vmax=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_center=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;n_cutoff=10,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_alpha=0.5,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_color_title=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;title=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;figsize=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;draw_labels=True) <code>[Function]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Plot pathway reachable local neighborhood
+
+Parameters
+----------
+rawk : Rawk
+    A Rawk instance.
+s_pw : str
+    A pathway to plot.
+filename : str
+    Saved plot filename
+node_color_attr : str
+    Node addtribute used for coloring:
+    - &#39;property&#39;: node property
+    - &#39;rwv_cpm&#39;: random walk visit count per million
+    - &#39;log10p1_rwv_cpm&#39;: log10(rwv_cpm + 1)
+    - &#39;rwv_cpm_diff&#39;: sample - background rwv_cpm
+    - &#39;rwv_cpm_p1_log2_fc&#39;: log2(
+      (sample_rwv_cpm + 1) / (background_rwv_cpm + 1))
+mean_node_color_attr : bool
+    If True, plot the mean node_color_attr of
+    the reactions in each pathway node. If False,
+    plot each pathway node as a pie chart, with each
+    wedge as the node_color_attr of each reaction in
+    the pathway.
+node_color_vmin : float, optional
+    Minimum value of the node color map.
+node_color_vmax : float, optional
+    Maximum value of the node color map.
+node_color_center : float, optional
+    Center value of the node color map.
+n_cutoff : int
+    The number of top reached pathways to plot.
+node_alpha : float
+    The alpha value of plotted nodes
+node_color_title : str, optional
+    Title of the node colorbar.
+title : str, optional
+    Title of the graph.
+figsize : (float, float)
+    Figure size.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h3>plot_pw_subgraph(<br>&nbsp;&nbsp;&nbsp;&nbsp;G,<br>&nbsp;&nbsp;&nbsp;&nbsp;pos,<br>&nbsp;&nbsp;&nbsp;&nbsp;nodes,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_sizes,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_data,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_cmap,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_alpha,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_cbar_title,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_labels,<br>&nbsp;&nbsp;&nbsp;&nbsp;edges,<br>&nbsp;&nbsp;&nbsp;&nbsp;edge_widths,<br>&nbsp;&nbsp;&nbsp;&nbsp;title,<br>&nbsp;&nbsp;&nbsp;&nbsp;figsize=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=42) <code>[Function]</code></h3>
+<h3>plot_rawk_sample_mtx(<br>&nbsp;&nbsp;&nbsp;&nbsp;rawk_sample,<br>&nbsp;&nbsp;&nbsp;&nbsp;save_pfx,<br>&nbsp;&nbsp;&nbsp;&nbsp;base_figsize=2,<br>&nbsp;&nbsp;&nbsp;&nbsp;vmin=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;vmax=None) <code>[Function]</code></h3>
+<h3>pr_sort_key(x) <code>[Function]</code></h3>
+<h3>prs_to_ps(prs) <code>[Function]</code></h3>
+<h3>reset_xy_lim(ax, pos, ratio) <code>[Function]</code></h3>
+<hr />
+<h2>rawk.rawk</h2>
+<h3>Rawk(sample, bg_sample) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Run Rawk on one sample vs background
+
+Parameters
+----------
+sample : RawkSample
+    An RawkSample instance to test for enrichment.
+bg_sample : RawkSample
+    An RawkSample instance used as background.
+</code></pre></div>
+
+<h4><code>Rawk.assert_graph_compatible(left, right)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Assert that two networkx graphs are compatible with Rawk
+</code></pre></div>
+
+<h4><code>Rawk.assert_rs_compatible(left, right)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Assert that two RawkSample instances are compatible with Rawk
+</code></pre></div>
+
+<h4><code>Rawk.set_node_emb(node_emb_method, pca_ndim=None, kmeans_n_clust=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Set node embeddings
+
+Parameters
+----------
+node_emb_method : str or dict
+    The method to set node embeddings, which can be one of the
+    following options:
+    - &#39;fastrp&#39;: Compute 2D t-SNE from fastrp node embeddings.
+    - &#39;node2vec&#39;: Compute 2D t-SNE from node2vec node embeddings.
+      This procedure may take several hours.
+    - dict: Reuse pre-computed 2D embeddings of nodes stored in a dict
+      with the following format:
+      {node_name1: (dim1_coord, dim2_coord), ...}. In this option,
+      pca_ndim and kmeans_n_clust should be None.
+pca_ndim : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of PCA
+    dimensions of the fastrp or node2vec embeddings to compute 2D t-SNE
+    and kmeans clusters. If None, default pca_ndim=6.
+kmeans_n_clust : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of
+    clusters parameter to run kmeans clustering. If None, default
+    pca_ndim=10.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h4><code>Rawk.test_num_steps(h_exponent=1, cmp_norm_fac=5000)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the number of random walk steps
+
+Parameters
+----------
+h_exponent : float
+    The heuristic factor for exponentiating sample vs background
+    fold changes of the number of random walk steps. This heuristic
+    factor intends to distinguish pathways with relatively small and
+    large effect sizes.
+
+cmp_norm_fac : float
+    Normaliziation factor for the number of random walk steps.
+
+Returns
+-------
+A dictionary of testing results, with the following structure:
+{
+    sample_id: {
+        pathway1: {&#39;test_nes&#39;: test_nes, &#39;test_pval&#39;: test_pval},
+        ...
+    }
+}
+</code></pre></div>
+
+<h4><code>Rawk.test_property_values(rw_s_prop_cutoff=0.005, pw_pvs_dict=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the node property values
+
+Parameters
+----------
+rw_s_prop_cutoff : float
+    The cutoff proportion of random walk steps used for defininig local
+    pathways.
+pw_pvs_dict : dict or None
+    {pathway1: [property_value1, ...], ...} dict used for extracting
+    pathway property values for testing. If None, use the foreground
+    sample node properties.
+
+Returns
+-------
+A dictionary of testing results, with the following structure:
+{
+    sample_id: {
+        pathway1: {&#39;test_nes&#39;: test_nes, &#39;test_pval&#39;: test_pval},
+        ...
+    }
+}
+</code></pre></div>
+
+<h3>RawkTest(fg_node_df, fg_df, bg_df, num_walks, test_id) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Rawk test number of random walk steps
+
+Parameters
+----------
+fg_node_df : pd.DataFrame
+    A foreground dataframe of reactions. Following are the required columns:
+    &#39;rxn&#39; (reaction ID), &#39;pathway&#39; (reaction pathway),
+    &#39;property&#39; (reaction property value),
+    &#39;gene&#39; (genes associated with the reaction). The &#39;gene&#39; column lists
+    the genes associated with each reaction in a ;;; joined list of gene
+    symbols.
+fg_df : pd.DataFrame
+    A foreground (pathways, pathway_____reaction)
+    dataframe. (i, j) is the number of steps of all
+    random walks starting from j in pathway i.
+bg_df : pd.DataFrame
+    A background (pathways, pathway_____reaction)
+    dataframe. (i, j) is the number of steps of all
+    random walks starting from j in pathway i.
+num_walks : int
+    Number of random walks starting from each reaction.
+test_id : str
+    ID for this test.
+</code></pre></div>
+
+<h4><code>RawkTest.df_dict_to_df(jd)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Construct a dataframe from a dict
+</code></pre></div>
+
+<h4><code>RawkTest.from_dict(dd)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Construct a RawkTest from a dict
+</code></pre></div>
+
+<h4><code>RawkTest.get_a_test_ns_tbls(x, y, norm_fac, total_ns, h_exponent)</code> <code>[Method]</code></h4>
+<h4><code>RawkTest.get_pw_ns(xdf, ydf, pw)</code> <code>[Method]</code></h4>
+<h4><code>RawkTest.get_spr(fg_df, bg_df)</code> <code>[Method]</code></h4>
+<h4><code>RawkTest.load_json(file_path)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Read json files
+
+Parameters
+----------
+file_path : str
+    Read file prefix.
+
+Returns
+-------
+A RawkTest constructed from the read data.
+</code></pre></div>
+
+<h4><code>RawkTest.save_to_json(file_path)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Save data to a json file
+
+Parameters
+----------
+file_path : str
+    Save json file path.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<h4><code>RawkTest.test_num_steps(h_exponent=1, cmp_norm_fac=5000)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the number of random walk steps
+
+Parameters
+----------
+h_exponent : float
+    The heuristic factor for exponentiating sample vs background
+    fold changes of the number of random walk steps. This heuristic
+    factor intends to distinguish pathways with relatively small and
+    large effect sizes.
+
+cmp_norm_fac : float
+    Normaliziation factor for the number of random walk steps.
+
+Returns
+-------
+A dictionary of testing results, with the following structure:
+{
+    sample_id: {
+        pathway1: {&#39;test_nes&#39;: test_nes, &#39;test_pval&#39;: test_pval},
+        ...
+    }
+}
+</code></pre></div>
+
+<h4><code>RawkTest.test_property_values(rw_s_prop_cutoff=0.005, pw_pvs_dict=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Enrichment test using the node property values
+
+Parameters
+----------
+rw_s_prop_cutoff : float
+    The cutoff proportion of random walk steps used for defininig local
+    pathways.
+pw_pvs_dict : dict or None
+    {pathway1: [property_value1, ...], ...} dict used for extracting
+    pathway property values for testing. If None, use the foreground
+    sample node properties.
+
+Returns
+-------
+A dictionary of testing results, with the following structure:
+{
+    sample_id: {
+        pathway1: {&#39;test_nes&#39;: test_nes, &#39;test_pval&#39;: test_pval},
+        ...
+    }
+}
+</code></pre></div>
+
+<h4><code>RawkTest.test_res_dict_to_df(mnea_res_dict, m_sfx, pw_subset=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Convert a test result dictionary to a 2-tuple of dataframes
+
+Parameters
+----------
+mnea_res_dict : dict
+    Rawk test result dictionary.
+
+m_sfx : str
+    Method suffix for dataframe columns.
+
+pw_subset : set, or list, or None
+    The subset of pathways to keep in the result dataframes.
+    If is None, keep all pathways with not-NA results.
+
+Returns
+-------
+A 2-tuple of (fdr_dataframe, enrichment_score_dataframe).
+</code></pre></div>
+
+<h4><code>RawkTest.to_dict()</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Convert data to a dict
+</code></pre></div>
+
+<hr />
+<h2>rawk.rawk_sample</h2>
+<h3>RawkSample(<br>&nbsp;&nbsp;&nbsp;&nbsp;node_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;edge_df,<br>&nbsp;&nbsp;&nbsp;&nbsp;name='sample',<br>&nbsp;&nbsp;&nbsp;&nbsp;uniform_property=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;workers=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;seed=17,<br>&nbsp;&nbsp;&nbsp;&nbsp;node_emb_method='fastrp',<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_walk_length=20,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_num_walks=8000,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_chunk_num_walks=1000,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_p=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_q=1.0,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_dimensions=50,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_window=10,<br>&nbsp;&nbsp;&nbsp;&nbsp;n2v_epochs=1,<br>&nbsp;&nbsp;&nbsp;&nbsp;random_walk_n_steps_method=None,<br>&nbsp;&nbsp;&nbsp;&nbsp;keep_walks=False,<br>&nbsp;&nbsp;&nbsp;&nbsp;verbose=False) <code>[Class]</code></h3>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Create a Rawk sample
+
+Parameters
+----------
+node_df : dataframe
+    A dataframe of reactions. Following are the required columns:
+    &#39;rxn&#39; (reaction ID), &#39;pathway&#39; (reaction pathway),
+    &#39;property&#39; (reaction property value),
+    &#39;gene&#39; (genes associated with the reaction). The &#39;gene&#39; column lists
+    the genes associated with each reaction in a ;;; joined list of gene
+    symbols.
+edge_df : dataframe
+    A dataframe of reactions edges. Following are the required columns:
+    &#39;src&#39; (source node reaction ID), &#39;dest&#39; (destination node reaction ID),
+    &#39;mn_weight&#39; (metabolic network edge weight). The edges are undirected,
+    with the src &lt;= dest in alphabetical order.
+name : str
+    The name of the sample.
+uniform_property : bool
+    Whether the property values should be converted to the same value.
+workers : int
+    The number of workers for running node2vec.
+seed : int
+    Random number seed.
+node_emb_method : str or dict
+    The method to set node embeddings, which can be one of the following
+    options:
+    - &#39;fastrp&#39;: Compute 2D t-SNE from fastrp node embeddings.
+    - &#39;node2vec&#39;: Compute 2D t-SNE from node2vec node embeddings.
+      This procedure may take several hours.
+    - dict: Reuse pre-computed 2D embeddings of nodes stored in a dict
+      with the following format:
+      {node_name1: (dim1_coord, dim2_coord), ...}.
+n2v_walk_length : int
+    node2vec walk length parameter.
+n2v_num_walks : int
+    node2vec number of walks parameter.
+n2v_chunk_num_walks : int
+    node2vec number of walks per chunk. Run node2vec in chunks to reduce
+    mem usage.
+n2v_p : float
+    node2vec p parameter.
+n2v_q : float
+    node2vec q parameter.
+n2v_dimensions : int
+    node2vec number of representation dimensions.
+n2v_window : int
+    node2vec window parameter.
+n2v_epochs : int
+    node2vec number of epochs parameter.
+random_walk_n_steps_method : str
+    Generate random walk number of steps with one of the following methods:
+    - &#39;simulation&#39;: Simulate random walks. Aggregate number of steps.
+    - &#39;calculation&#39;: Calculate number of steps using transition probabity
+      matrix. NOTE: This method is only implemented for n2v_p=1 and n2v_q=1.
+      If node_emb_method=&#39;node2vec&#39;, the random walks still need to be simulated.
+    - None: When n2v_p=1 and n2v_q=1, use the calculation method. Otherwise,
+      use  the simulation method.
+verbose : bool
+    Print runtime messages or not.
+</code></pre></div>
+
+<h4><code>RawkSample.most_frequent(x)</code> <code>[Method]</code></h4>
+<h4><code>RawkSample.read_n2v_res(pfx)</code> <code>[Method]</code></h4>
+<h4><code>RawkSample.run_kmeans(X, k, seed)</code> <code>[Method]</code></h4>
+<h4><code>RawkSample.rxn_to_pw_rxn(df, index=True, columns=True)</code> <code>[Method]</code></h4>
+<h4><code>RawkSample.save_n2v_res(pfx)</code> <code>[Method]</code></h4>
+<h4><code>RawkSample.set_node_emb(node_emb_method, pca_ndim=None, kmeans_n_clust=None)</code> <code>[Method]</code></h4>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>Set node embeddings
+
+Parameters
+----------
+node_emb_method : str or dict
+    The method to set node embeddings, which can be one of the
+    following options:
+    - &#39;fastrp&#39;: Compute 2D t-SNE from fastrp node embeddings.
+    - &#39;node2vec&#39;: Compute 2D t-SNE from node2vec node embeddings.
+      This procedure may take several hours.
+    - dict: Reuse pre-computed 2D embeddings of nodes stored in a dict
+      with the following format:
+      {node_name1: (dim1_coord, dim2_coord), ...}. In this option,
+      pca_ndim and kmeans_n_clust should be None.
+pca_ndim : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of PCA
+    dimensions of the fastrp or node2vec embeddings to compute 2D t-SNE
+    and kmeans clusters. If None, default pca_ndim=6.
+kmeans_n_clust : int or None
+    When node_emb_method in [&#39;fastrp&#39;, &#39;node2vec&#39;], the number of
+    clusters parameter to run kmeans clustering. If None, default
+    pca_ndim=10.
+
+Returns
+-------
+None
+</code></pre></div>
+
+<hr />
+
+    <!-- Explicit marker to guarantee document integrity -->
+    <div class="doc-end">&#9632; End of Document &#9632;</div>
+</body>
+</html>

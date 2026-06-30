@@ -6,15 +6,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rawk"
 
-version = "0.0.5"
+version = "0.1.0"
 
-description = "Metabolic reaction network local enrichment analysis"
+description = "Metabolic pathway local enrichment analysis via random walks on metabolic reaction network"
 
 readme = "README.md"
 
 requires-python = "~=3.11"
 
-license = {file = "LICENSE.txt"}
+license-files = ["LICENSE.txt"]
 
 keywords = ["metabolism", "network", "enrichment"]
 
@@ -27,7 +27,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "node2vec~=0.5.0",
+    "pecanpy~=2.0.9",
     "pandas~=2.2.0",
     "networkx~=3.1",
     "matplotlib~=3.8.3",
@@ -35,7 +35,6 @@ dependencies = [
     "scipy~=1.12.0",
     "scikit-learn~=1.4.1",
     "adjustText~=1.1.1",
-    "seaborn~=0.13.2",
     "joblib~=1.4.2",
     "cobra~=0.29.0",
 ]

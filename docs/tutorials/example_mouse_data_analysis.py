@@ -1,112 +1,140 @@
 import rawk as rk
 import pathlib
+import os
 import pandas as pd
 import numpy as np
-import time
+input_dir = "tutorial_data"
 
-
-
-input_dir = 'tutorial_data/'
-
-
-out_dir = 'tutorial_output/example_mouse_data_analysis/'
+out_dir = os.path.join(
+    "tutorial_output",
+    "example_mouse_data_analysis")
 pathlib.Path(out_dir).mkdir(parents=True, exist_ok=True)
-
-
-
-# Analyze mouse immunotherapy scRNA-seq dataset --------------------------------
-
-# Read cluster average normalized expression table
-m_gene_prop_df = pd.read_table(
-    input_dir + 'immune_cell_cluster_average_normalized_expression.tsv')
-
-# Read metabolic reaction network edge table
-m_rxn_edge_df = pd.read_table(input_dir + 'imm1415_edges.tsv')
-
-# Read metabolic gene reaction association table
-m_rxn_gene_df = pd.read_table(input_dir + 'imm1415_rxn_gene.tsv')
-
-# Pre-process input data
-node_df, edge_df = rk.get_met_net_dfs(
-    m_rxn_gene_df, m_rxn_edge_df, m_gene_prop_df,
-    15, prop_na_handling='replace_with_0',
-    rxn_gene_prop_agg_func=lambda x: np.log1p(np.mean(np.expm1(x.values))))
-
-
-# Save pre-rocesses node and edge tables
-node_df.to_csv(out_dir + 'm_rxn_props.csv', index=False)
-edge_df.to_csv(out_dir + 'm_rxn_edges.csv', index=False)
-
-
-##### Run Rawk on one sample #####
-
-# Select a sample to run Rawk
-selected_sample = 'ActivatedMyeloidCells___aPD1aCTLA4'
-ss_node_df = (
-    node_df
-    .loc[:, ['rxn', 'pathway', 'gene', selected_sample]]
-    .copy()
-    .rename(columns={selected_sample: 'property'})
+original_data_fn = (
+    "mouse_ict_scrna_seq"
+    "_pseudobulk_average_normalized_uc.tsv"
 )
 
+original_data_df = pd.read_table(
+    os.path.join(input_dir, original_data_fn))
 
-m_rawk = rk.Rawk(
-    rk.RawkSample(
-        ss_node_df, edge_df, name='ActivatedMyeloidCells___aPD1aCTLA4',
-        workers=1),
-    rk.RawkSample(
-        ss_node_df, edge_df, name='uniform_background',
-        uniform_property=True,
-        workers=1)
+mrn_node_df = pd.read_table(
+    os.path.join(
+        input_dir,
+        "imm1415_unfiltered_nodes.tsv"))
+
+mrn_edge_df = pd.read_table(
+    os.path.join(
+        input_dir,
+        "imm1415_wg0_edges.tsv.gz"),
+    low_memory=False)
+mrn_edge_weights = mrn_edge_df["mn_weight"].values
+
+assert np.all(mrn_edge_weights > 0)
+
+mrn_edge_weight_threshold = np.round(
+    np.percentile(
+        mrn_edge_weights,
+        20),
+    3)
+# Select the first gene column and one or more other
+# columns for running rawk
+#
+# Here, select columns gene and
+# ActivatedMyeloidCells___aPD1aCTLA4
+columns_for_rawk = [
+    "gene",
+    "ActivatedMyeloidCells___aPD1aCTLA4",
+]
+
+df_for_rawk_analysis = original_data_df.loc[:, columns_for_rawk]
+
+def preprocess_1d_arr(x):
+    p = np.e ** rk.qn_transform(
+        x, log1p=True, collapse_0s=True,
+        center=False)
+    return p
+
+
+pp_node_df, pp_edge_df = rk.get_met_net_dfs(
+    mrn_node_df, mrn_edge_df,
+    df_for_rawk_analysis,
+    mrn_edge_weight_threshold,
+    fill_missing_gene_prop=0,
+    transform_gene_prop_func=preprocess_1d_arr)
+msrk = rk.MultiSampleRawk(
+    pp_node_df.drop(columns=["rxn_name", "equation"]),
+    pp_edge_df,
+    n_jobs=1,
+    n2v_walk_length=20,
+    n2v_num_walks=8000,
+    seed=42,
 )
 
-# Plot metabolic network nodes and edges
-m_rawk.sample.plot_graph('{}/m_nodes.png'.format(out_dir), draw_edges=False)
-
-
-# Plot 'Glycolysis/Gluconeogenesis' pathway neighborhood
-for i in ['property', 'rw_ps', 'log10p1_rw_ps', 'rw_ps_diff', 'rw_ps_log2fc']:
-    if i in ['rw_ps_log2fc', 'rw_ps_diff']:
-        j = 0
-    else:
-        j = None
-    m_rawk.plot_pw_neighborhood(
-        'Glycolysis/Gluconeogenesis',
-        '{}/m_{}_neighborhood.png'.format(out_dir, i),
-        i, node_color_vmin=None, node_color_vmax=None,
-        node_color_center=j, n_cutoff=10, node_alpha=0.5)
-
-
-# Plot node2vec random walk related matrices
-m_rawk.sample.plot_n2v_mat_dict(out_dir + 'm_sample')
-
-
-# Run enrichment tests
-m_rawk_test_res = m_rawk.test_res_dict_to_df(
-    m_rawk.test_num_steps(cmp_norm_fac=100), '_rawk')
-
-# Save enrichment test results
-m_rawk_test_res[0].to_csv('{}/m_rawk_ss_padj_df.csv'.format(out_dir))
-m_rawk_test_res[1].to_csv('{}/m_rawk_ss_es_df.csv'.format(out_dir))
-
-
-
-##### Run Rawk on mutliple samples #####
-
-ms_node_df = (
-    node_df
-    .loc[:, ['rxn', 'pathway', 'gene',
-             'ActivatedMyeloidCells___aPD1aCTLA4',
-             'HighlyProliferativeTCells___aPD1aCTLA4',
-             'OtherMyeloidCells___aPD1aCTLA4',]]
-    .copy()
+mrn_n_genes_by_pathway = (
+    mrn_node_df
+    .groupby("pathway")["gene"]
+    .apply(lambda x: len(set(x)))
+    .to_dict()
 )
 
-m_ms_rawk = rk.MultiSampleRawk(ms_node_df, edge_df, workers=1)
+pathways_for_testing = [
+    p for p, n in mrn_n_genes_by_pathway.items()
+    if n >= 5 and p != "Miscellaneous"]
 
-# Run enrichment tests
-m_ms_rawk_ns_test_res = m_ms_rawk.test_num_steps(cmp_norm_fac=100)
+rk_fdr_df, rk_es_df = msrk.test_num_steps(
+    pw_subset=pathways_for_testing)
+plot_pathway = "Fatty acid oxidation"
+plot_rawk = msrk.rawk_list[0]
+# each Rawk instance has a sample and a background sample
+assert plot_rawk.sample.name == df_for_rawk_analysis.columns[1]
+assert plot_rawk.bg_sample.name == "uniform_background"
+rk.plot_pw_neighborhood(
+    plot_rawk,
+    plot_pathway,
+    os.path.join(
+        out_dir,
+        "rawk_pathway_nbr_rwv_cpm_p1_log2fc.png"),
+    "rwv_cpm_p1_log2fc",
+    node_color_center=0,
+    n_cutoff=6, node_alpha=0.7,
+    node_color_title=(
+        "Sample vs background\n"
+        "RWVCPM+1 log2 fold change"
+    ),
+    title=f"Source pathway:\n{plot_pathway}")
+rk.plot_graph(
+    plot_rawk.sample.rxn_graph,
+    plot_rawk.sample.rxn_pos,
+    os.path.join(
+        out_dir,
+        "rawk_mrn_reaction_tsne.png"),
+    draw_edges=True,
+    non_s_pw_node_size=4,
+    title="Rawk metabolic reactions",
+    dim_name="t-SNE")
+pathway_pos = {
+    n: d["pw_pos"]
+    for n, d in plot_rawk.sample.pw_graph.nodes.items()
+}
+rk.plot_graph(
+    plot_rawk.sample.pw_graph,
+    pathway_pos,
+    os.path.join(
+        out_dir,
+        "rawk_mrn_pathway_tsne.png"),
+    node_color_attr="pw_property",
+    non_s_pw_node_size=30,
+    draw_edges=True,
+    title="Rawk metabolic pathways",
+    dim_name="t-SNE")
+rk.plot_rawk_sample_mtx(
+    plot_rawk.sample,
+    os.path.join(
+        out_dir, "rawk_test_sample"))
+rk_fdr_df.to_csv(
+    os.path.join(out_dir, "rawk_fdr.tsv"),
+    sep="\t", index=False)
 
-# Save enrichment test results
-m_ms_rawk_ns_test_res[0].to_csv('{}/m_rawk_ms_padj_df.csv'.format(out_dir))
-m_ms_rawk_ns_test_res[1].to_csv('{}/m_rawk_ms_es_df.csv'.format(out_dir))
+rk_es_df.to_csv(
+    os.path.join(out_dir, "rawk_es.tsv"),
+    sep="\t", index=False)

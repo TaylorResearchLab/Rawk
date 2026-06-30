@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        /* ======================================================== */
+        /* GLOBAL STYLES (Applies to both HTML webpage and PDF)     */
+        /* ======================================================== */
+        body {
+            font-family: sans-serif;
+            line-height: 1.5;
+            color: #111;
+            max-width: 800px; /* Optional: keeps web view easy to read */
+            margin: 0 auto;   /* Centers text on wide monitors */
+            padding: 20px;    /* Padding for the web view */
+        }
+        pre {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: keep-all;
+            overflow-wrap: normal;
+            -webkit-line-break: after-white-space;
+            line-break: strict;
+            hyphens: none;
+        }
+        code {
+            font-family: monospace;
+            background: #f4f4f4;
+        }
+        img {
+            width: auto !important;
+            height: auto !important;
+            max-width: 50%;
+        }
+
+        /* ======================================================== */
+        /* PRINT STYLES (WeasyPrint reads this, Web Browsers ignore)*/
+        /* ======================================================== */
+        @media print {
+            body {
+                max-width: 100%; /* Let text fill the full printable width */
+                padding: 0;      /* Let @page margins handle spacing */
+                margin: 0;
+            }
+            @page {
+                size: letter;
+                margin: 1in;
+                @bottom-right {
+                    content: "Page " counter(page) " of " counter(pages);
+                    font-family: sans-serif;
+                    font-size: 9pt;
+                    color: #555;
+                }
+            }
+            /* Prevents a image from cutting
+               in half right across a PDF page break */
+            img {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Run Rawk on an example mouse dataset</h1>
+<p>This tutorial shows how to use Rawk to analyze the pseudobulk average
+normalized UMI counts of the mouse immune checkpoint cancer therapy
+scRNA-seq dataset.</p>
+<h2>Import python dependencies</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">rawk</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">rk</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pathlib</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">os</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pandas</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">pd</span>
+<span style="color: #008000; font-weight: bold">import</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">numpy</span><span style="color: #BBB"> </span><span style="color: #008000; font-weight: bold">as</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">np</span>
+</code></pre></div>
+
+<h2>Set up input and output directories</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>input_dir <span style="color: #666">=</span> <span style="color: #BA2121">&quot;tutorial_data&quot;</span>
+
+out_dir <span style="color: #666">=</span> os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+    <span style="color: #BA2121">&quot;tutorial_output&quot;</span>,
+    <span style="color: #BA2121">&quot;example_mouse_data_analysis&quot;</span>)
+pathlib<span style="color: #666">.</span>Path(out_dir)<span style="color: #666">.</span>mkdir(parents<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+</code></pre></div>
+
+<h2>Read input data</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>original_data_fn <span style="color: #666">=</span> (
+    <span style="color: #BA2121">&quot;mouse_ict_scrna_seq&quot;</span>
+    <span style="color: #BA2121">&quot;_pseudobulk_average_normalized_uc.tsv&quot;</span>
+)
+
+original_data_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>read_table(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(input_dir, original_data_fn))
+
+mrn_node_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>read_table(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        input_dir,
+        <span style="color: #BA2121">&quot;imm1415_unfiltered_nodes.tsv&quot;</span>))
+
+mrn_edge_df <span style="color: #666">=</span> pd<span style="color: #666">.</span>read_table(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        input_dir,
+        <span style="color: #BA2121">&quot;imm1415_wg0_edges.tsv.gz&quot;</span>),
+    low_memory<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>)
+</code></pre></div>
+
+<h2>Set edge pruning weight threshold</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>mrn_edge_weights <span style="color: #666">=</span> mrn_edge_df[<span style="color: #BA2121">&quot;mn_weight&quot;</span>]<span style="color: #666">.</span>values
+
+<span style="color: #008000; font-weight: bold">assert</span> np<span style="color: #666">.</span>all(mrn_edge_weights <span style="color: #666">&gt;</span> <span style="color: #666">0</span>)
+
+mrn_edge_weight_threshold <span style="color: #666">=</span> np<span style="color: #666">.</span>round(
+    np<span style="color: #666">.</span>percentile(
+        mrn_edge_weights,
+        <span style="color: #666">20</span>),
+    <span style="color: #666">3</span>)
+</code></pre></div>
+
+<h2>Preprocess input data</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code><span style="color: #3D7B7B; font-style: italic"># Select the first gene column and one or more other</span>
+<span style="color: #3D7B7B; font-style: italic"># columns for running rawk</span>
+<span style="color: #3D7B7B; font-style: italic">#</span>
+<span style="color: #3D7B7B; font-style: italic"># Here, select columns gene and</span>
+<span style="color: #3D7B7B; font-style: italic"># ActivatedMyeloidCells___aPD1aCTLA4</span>
+columns_for_rawk <span style="color: #666">=</span> [
+    <span style="color: #BA2121">&quot;gene&quot;</span>,
+    <span style="color: #BA2121">&quot;ActivatedMyeloidCells___aPD1aCTLA4&quot;</span>,
+]
+
+df_for_rawk_analysis <span style="color: #666">=</span> original_data_df<span style="color: #666">.</span>loc[:, columns_for_rawk]
+
+<span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">preprocess_1d_arr</span>(x):
+    p <span style="color: #666">=</span> np<span style="color: #666">.</span>e <span style="color: #666">**</span> rk<span style="color: #666">.</span>qn_transform(
+        x, log1p<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, collapse_0s<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+        center<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>)
+    <span style="color: #008000; font-weight: bold">return</span> p
+
+
+pp_node_df, pp_edge_df <span style="color: #666">=</span> rk<span style="color: #666">.</span>get_met_net_dfs(
+    mrn_node_df, mrn_edge_df,
+    df_for_rawk_analysis,
+    mrn_edge_weight_threshold,
+    fill_missing_gene_prop<span style="color: #666">=0</span>,
+    transform_gene_prop_func<span style="color: #666">=</span>preprocess_1d_arr)
+</code></pre></div>
+
+<h2>Run Rawk</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>msrk <span style="color: #666">=</span> rk<span style="color: #666">.</span>MultiSampleRawk(
+    pp_node_df<span style="color: #666">.</span>drop(columns<span style="color: #666">=</span>[<span style="color: #BA2121">&quot;rxn_name&quot;</span>, <span style="color: #BA2121">&quot;equation&quot;</span>]),
+    pp_edge_df,
+    n_jobs<span style="color: #666">=1</span>,
+    n2v_walk_length<span style="color: #666">=20</span>,
+    n2v_num_walks<span style="color: #666">=8000</span>,
+    seed<span style="color: #666">=42</span>,
+)
+
+mrn_n_genes_by_pathway <span style="color: #666">=</span> (
+    mrn_node_df
+    <span style="color: #666">.</span>groupby(<span style="color: #BA2121">&quot;pathway&quot;</span>)[<span style="color: #BA2121">&quot;gene&quot;</span>]
+    <span style="color: #666">.</span>apply(<span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #008000">len</span>(<span style="color: #008000">set</span>(x)))
+    <span style="color: #666">.</span>to_dict()
+)
+
+pathways_for_testing <span style="color: #666">=</span> [
+    p <span style="color: #008000; font-weight: bold">for</span> p, n <span style="color: #A2F; font-weight: bold">in</span> mrn_n_genes_by_pathway<span style="color: #666">.</span>items()
+    <span style="color: #008000; font-weight: bold">if</span> n <span style="color: #666">&gt;=</span> <span style="color: #666">5</span> <span style="color: #A2F; font-weight: bold">and</span> p <span style="color: #666">!=</span> <span style="color: #BA2121">&quot;Miscellaneous&quot;</span>]
+
+rk_fdr_df, rk_es_df <span style="color: #666">=</span> msrk<span style="color: #666">.</span>test_num_steps(
+    pw_subset<span style="color: #666">=</span>pathways_for_testing)
+</code></pre></div>
+
+<h2>Plot Rawk results</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>plot_pathway <span style="color: #666">=</span> <span style="color: #BA2121">&quot;Fatty acid oxidation&quot;</span>
+plot_rawk <span style="color: #666">=</span> msrk<span style="color: #666">.</span>rawk_list[<span style="color: #666">0</span>]
+<span style="color: #3D7B7B; font-style: italic"># each Rawk instance has a sample and a background sample</span>
+<span style="color: #008000; font-weight: bold">assert</span> plot_rawk<span style="color: #666">.</span>sample<span style="color: #666">.</span>name <span style="color: #666">==</span> df_for_rawk_analysis<span style="color: #666">.</span>columns[<span style="color: #666">1</span>]
+<span style="color: #008000; font-weight: bold">assert</span> plot_rawk<span style="color: #666">.</span>bg_sample<span style="color: #666">.</span>name <span style="color: #666">==</span> <span style="color: #BA2121">&quot;uniform_background&quot;</span>
+</code></pre></div>
+
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rk<span style="color: #666">.</span>plot_pw_neighborhood(
+    plot_rawk,
+    plot_pathway,
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir,
+        <span style="color: #BA2121">&quot;rawk_pathway_nbr_rwv_cpm_p1_log2fc.png&quot;</span>),
+    <span style="color: #BA2121">&quot;rwv_cpm_p1_log2fc&quot;</span>,
+    node_color_center<span style="color: #666">=0</span>,
+    n_cutoff<span style="color: #666">=6</span>, node_alpha<span style="color: #666">=0.7</span>,
+    node_color_title<span style="color: #666">=</span>(
+        <span style="color: #BA2121">&quot;Sample vs background</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;RWVCPM+1 log2 fold change&quot;</span>
+    ),
+    title<span style="color: #666">=</span><span style="color: #BA2121">f&quot;Source pathway:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #A45A77; font-weight: bold">{</span>plot_pathway<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>)
+</code></pre></div>
+
+<p><img alt="" src="tutorial_output/example_mouse_data_analysis/rawk_pathway_nbr_rwv_cpm_p1_log2fc.png" /></p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rk<span style="color: #666">.</span>plot_graph(
+    plot_rawk<span style="color: #666">.</span>sample<span style="color: #666">.</span>rxn_graph,
+    plot_rawk<span style="color: #666">.</span>sample<span style="color: #666">.</span>rxn_pos,
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir,
+        <span style="color: #BA2121">&quot;rawk_mrn_reaction_tsne.png&quot;</span>),
+    draw_edges<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+    non_s_pw_node_size<span style="color: #666">=4</span>,
+    title<span style="color: #666">=</span><span style="color: #BA2121">&quot;Rawk metabolic reactions&quot;</span>,
+    dim_name<span style="color: #666">=</span><span style="color: #BA2121">&quot;t-SNE&quot;</span>)
+</code></pre></div>
+
+<p><img alt="" src="tutorial_output/example_mouse_data_analysis/rawk_mrn_reaction_tsne.png" /></p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>pathway_pos <span style="color: #666">=</span> {
+    n: d[<span style="color: #BA2121">&quot;pw_pos&quot;</span>]
+    <span style="color: #008000; font-weight: bold">for</span> n, d <span style="color: #A2F; font-weight: bold">in</span> plot_rawk<span style="color: #666">.</span>sample<span style="color: #666">.</span>pw_graph<span style="color: #666">.</span>nodes<span style="color: #666">.</span>items()
+}
+rk<span style="color: #666">.</span>plot_graph(
+    plot_rawk<span style="color: #666">.</span>sample<span style="color: #666">.</span>pw_graph,
+    pathway_pos,
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir,
+        <span style="color: #BA2121">&quot;rawk_mrn_pathway_tsne.png&quot;</span>),
+    node_color_attr<span style="color: #666">=</span><span style="color: #BA2121">&quot;pw_property&quot;</span>,
+    non_s_pw_node_size<span style="color: #666">=30</span>,
+    draw_edges<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>,
+    title<span style="color: #666">=</span><span style="color: #BA2121">&quot;Rawk metabolic pathways&quot;</span>,
+    dim_name<span style="color: #666">=</span><span style="color: #BA2121">&quot;t-SNE&quot;</span>)
+</code></pre></div>
+
+<p><img alt="" src="tutorial_output/example_mouse_data_analysis/rawk_mrn_pathway_tsne.png" /></p>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rk<span style="color: #666">.</span>plot_rawk_sample_mtx(
+    plot_rawk<span style="color: #666">.</span>sample,
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(
+        out_dir, <span style="color: #BA2121">&quot;rawk_test_sample&quot;</span>))
+</code></pre></div>
+
+<p><img alt="" src="tutorial_output/example_mouse_data_analysis/rawk_test_sample_pp_rwvcpm_mtx.png" /></p>
+<h2>Save Rawk results</h2>
+<div class="codehilite" style="background: #f8f8f8"><pre style="line-height: 125%;"><span></span><code>rk_fdr_df<span style="color: #666">.</span>to_csv(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(out_dir, <span style="color: #BA2121">&quot;rawk_fdr.tsv&quot;</span>),
+    sep<span style="color: #666">=</span><span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\t</span><span style="color: #BA2121">&quot;</span>, index<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>)
+
+rk_es_df<span style="color: #666">.</span>to_csv(
+    os<span style="color: #666">.</span>path<span style="color: #666">.</span>join(out_dir, <span style="color: #BA2121">&quot;rawk_es.tsv&quot;</span>),
+    sep<span style="color: #666">=</span><span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\t</span><span style="color: #BA2121">&quot;</span>, index<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">False</span>)
+</code></pre></div>
+
+    <!-- Explicit marker to guarantee document integrity -->
+    <div class="doc-end">&#9632; End of Document &#9632;</div>
+</body>
+</html>
