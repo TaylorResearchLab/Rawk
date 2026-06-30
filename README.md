@@ -1,4 +1,5 @@
 # Rawk
+
 A python package for metabolic pathway local enrichment analysis via random
 walks on metabolic reaction network.
 
@@ -13,7 +14,7 @@ Rawk will be available on PyPI soon.
 
 ### Tutorials
 
-The tutorials of Rawk are in the [`docs/tutorials`](docs/tutorials) folder,
+The tutorials of Rawk are in the `docs/tutorials` folder,
 which contains the following tutorials:
 
 - `construct_recon3d_mrn.md`: Construct a metabolic reaction network from a
@@ -26,7 +27,7 @@ which contains the following tutorials:
 ### API reference
 
 The API reference files of Rawk are in
-[`docs/api_reference`](docs/api_reference). The API reference files were
+`docs/api_reference`. The API reference files were
 generated from the package docstrings. The docstrings can also be accessed
 using `help` in python interpreter. For example, `help(rawk.Rawk)` shows the
 documentation of the `Rawk` class.
