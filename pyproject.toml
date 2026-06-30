@@ -38,3 +38,8 @@ dependencies = [
     "joblib~=1.4.2",
     "cobra~=0.29.0",
 ]
+
+
+[project.urls]
+Homepage = "https://github.com/TaylorResearchLab/Rawk"
+Issues = "https://github.com/TaylorResearchLab/Rawk/issues"
